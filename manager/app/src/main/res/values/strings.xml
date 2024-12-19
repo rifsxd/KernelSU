@@ -25,8 +25,9 @@
     <string name="module_empty">No module installed</string>
     <string name="module">Module</string>
     <string name="confirm_module_installation">Confirm Installation</string>
-    <string name="module_install_prompt_with_name">Do you want to continue installing this module?\nModule: %1$s</string>
+    <string name="module_install_prompt_with_name">Do you want to continue installing this module %1$s?</string>
     <string name="uninstall">Uninstall</string>
+    <string name="restore">Restore</string>
     <string name="module_install">Install</string>
     <string name="install">Install</string>
     <string name="reboot">Reboot</string>
@@ -40,6 +41,9 @@
     <string name="module_uninstall_confirm">Are you sure you want to uninstall module %s?</string>
     <string name="module_uninstall_success">%s uninstalled</string>
     <string name="module_uninstall_failed">Failed to uninstall: %s</string>
+    <string name="module_restore_confirm">Are you sure you want to restore module %s?</string>
+    <string name="module_restore_success">%s restoreed</string>
+    <string name="module_restore_failed">Failed to restore: %s</string>
     <string name="module_version">Version</string>
     <string name="module_author">Author</string>
     <string name="refresh">Refresh</string>

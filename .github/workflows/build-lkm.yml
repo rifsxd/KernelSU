@@ -1,4 +1,4 @@
-name: Build LKM for KernelSU
+name: Build LKM for KernelSU-Next
 on:
   push:
     branches: [ "next" ]

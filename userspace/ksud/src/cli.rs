@@ -143,7 +143,7 @@ enum Debug {
     /// Set the manager app, kernel CONFIG_KSU_DEBUG should be enabled.
     SetManager {
         /// manager package name
-        #[arg(default_value_t = String::from("me.weishu.kernelsu"))]
+        #[arg(default_value_t = String::from("com.rifsxd.ksunext"))]
         apk: String,
     },
 
@@ -200,6 +200,12 @@ enum Module {
 
     /// Uninstall module <id>
     Uninstall {
+        /// module id
+        id: String,
+    },
+
+    /// Restore module <id>
+    Restore {
         /// module id
         id: String,
     },
@@ -304,6 +310,7 @@ pub fn run() -> Result<()> {
             match command {
                 Module::Install { zip } => module::install_module(&zip),
                 Module::Uninstall { id } => module::uninstall_module(&id),
+                Module::Restore { id } => module::restore_module(&id),
                 Module::Enable { id } => module::enable_module(&id),
                 Module::Disable { id } => module::disable_module(&id),
                 Module::Action { id } => module::run_action(&id),

@@ -50,7 +50,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          path: KernelSU
+          path: KernelSU-Next
           fetch-depth: 0
 
       - name: List artifacts
@@ -89,11 +89,11 @@ jobs:
           export LZ4=$GITHUB_WORKSPACE/build-tools/path/linux-x86/lz4
           export MKBOOTIMG=$GITHUB_WORKSPACE/mkbootimg/mkbootimg.py
           export UNPACK_BOOTIMG=$GITHUB_WORKSPACE/mkbootimg/unpack_bootimg.py
-          cd $GITHUB_WORKSPACE/KernelSU
+          cd $GITHUB_WORKSPACE/KernelSU-Next
           export VERSION=$(($(git rev-list --count HEAD) + 10200))
           echo "VERSION: $VERSION"
           cd -
-          bash $GITHUB_WORKSPACE/KernelSU/.github/scripts/build_a13.sh
+          bash $GITHUB_WORKSPACE/KernelSU-Next/.github/scripts/build_a13.sh
 
       - name: Display structure of boot files
         run: ls -R

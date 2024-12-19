@@ -31,10 +31,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Wysiwyg
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -101,6 +99,7 @@ import com.rifsxd.ksunext.ui.util.hasMagisk
 import com.rifsxd.ksunext.ui.util.reboot
 import com.rifsxd.ksunext.ui.util.toggleModule
 import com.rifsxd.ksunext.ui.util.uninstallModule
+import com.rifsxd.ksunext.ui.util.restoreModule
 import com.rifsxd.ksunext.ui.viewmodel.ModuleViewModel
 import com.rifsxd.ksunext.ui.webui.WebUIActivity
 import okhttp3.OkHttpClient
@@ -255,13 +254,17 @@ private fun ModuleList(
     val failedEnable = stringResource(R.string.module_failed_to_enable)
     val failedDisable = stringResource(R.string.module_failed_to_disable)
     val failedUninstall = stringResource(R.string.module_uninstall_failed)
+    val failedRestore = stringResource(R.string.module_restore_failed)
     val successUninstall = stringResource(R.string.module_uninstall_success)
+    val successRestore = stringResource(R.string.module_restore_success)
     val reboot = stringResource(R.string.reboot)
     val rebootToApply = stringResource(R.string.reboot_to_apply)
     val moduleStr = stringResource(R.string.module)
     val uninstall = stringResource(R.string.uninstall)
+    val restore = stringResource(R.string.restore)
     val cancel = stringResource(android.R.string.cancel)
     val moduleUninstallConfirm = stringResource(R.string.module_uninstall_confirm)
+    val moduleRestoreConfirm = stringResource(R.string.module_restore_confirm)
     val updateText = stringResource(R.string.module_update)
     val changelogText = stringResource(R.string.module_changelog)
     val downloadingText = stringResource(R.string.module_downloading)
@@ -375,6 +378,33 @@ private fun ModuleList(
             reboot()
         }
     }
+
+    suspend fun onModuleRestore(module: ModuleViewModel.ModuleInfo) {
+        val confirmResult = confirmDialog.awaitConfirm(
+            moduleStr,
+            content = moduleRestoreConfirm.format(module.name),
+            confirm = restore,
+            dismiss = cancel
+        )
+        if (confirmResult != ConfirmResult.Confirmed) {
+            return
+        }
+
+        val success = loadingDialog.withLoading {
+            withContext(Dispatchers.IO) {
+                restoreModule(module.id)
+            }
+        }
+
+        if (success) {
+            viewModel.fetchModuleList()
+        }
+        val message = if (success) {
+            successRestore.format(module.name)
+        } else {
+            failedRestore.format(module.name)
+        }
+    }
     PullToRefreshBox(
         modifier = boxModifier,
         onRefresh = {
@@ -426,6 +456,9 @@ private fun ModuleList(
                             updateUrl = updatedModule.first,
                             onUninstall = {
                                 scope.launch { onModuleUninstall(module) }
+                            },
+                            onRestore = {
+                                scope.launch { onModuleRestore(module) }
                             },
                             onCheckChanged = {
                                 scope.launch {
@@ -486,6 +519,7 @@ fun ModuleItem(
     isChecked: Boolean,
     updateUrl: String,
     onUninstall: (ModuleViewModel.ModuleInfo) -> Unit,
+    onRestore: (ModuleViewModel.ModuleInfo) -> Unit,
     onCheckChanged: (Boolean) -> Unit,
     onUpdate: (ModuleViewModel.ModuleInfo) -> Unit,
     onClick: (ModuleViewModel.ModuleInfo) -> Unit
@@ -576,29 +610,28 @@ fun ModuleItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
                 if (module.hasActionScript) {
                     FilledTonalButton(
                         modifier = Modifier.defaultMinSize(52.dp, 32.dp),
                         onClick = {
-                        	navigator.navigate(ExecuteModuleActionScreenDestination(module.id))
-                        	viewModel.markNeedRefresh()
+                            navigator.navigate(ExecuteModuleActionScreenDestination(module.id))
+                            viewModel.markNeedRefresh()
                         },
                         contentPadding = ButtonDefaults.TextButtonContentPadding
                     ) {
                         Icon(
-			                modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(20.dp),
                             imageVector = Icons.Outlined.PlayArrow,
                             contentDescription = null
                         )
-			            if (!module.hasWebUi && updateUrl.isEmpty()) {
+                        if (!module.hasWebUi && updateUrl.isEmpty()) {
                             Text(
-				                modifier = Modifier.padding(start = 7.dp),
+                                modifier = Modifier.padding(start = 7.dp),
                                 text = stringResource(R.string.action),
                                 fontFamily = MaterialTheme.typography.labelMedium.fontFamily,
                                 fontSize = MaterialTheme.typography.labelMedium.fontSize
                             )
-			            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.weight(0.1f, true))
@@ -612,16 +645,16 @@ fun ModuleItem(
                         contentPadding = ButtonDefaults.TextButtonContentPadding
                     ) {
                         Icon(
-			                modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(20.dp),
                             imageVector = Icons.AutoMirrored.Outlined.Wysiwyg,
                             contentDescription = null
                         )
                         if (!module.hasActionScript && updateUrl.isEmpty()) {
                             Text(
-				                modifier = Modifier.padding(start = 7.dp),
-                            	fontFamily = MaterialTheme.typography.labelMedium.fontFamily,
-                            	fontSize = MaterialTheme.typography.labelMedium.fontSize,
-                            	text = stringResource(R.string.open)
+                                modifier = Modifier.padding(start = 7.dp),
+                                fontFamily = MaterialTheme.typography.labelMedium.fontFamily,
+                                fontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                text = stringResource(R.string.open)
                             )
                         }
                     }
@@ -636,43 +669,61 @@ fun ModuleItem(
                         shape = ButtonDefaults.textShape,
                         contentPadding = ButtonDefaults.TextButtonContentPadding
                     ) {
-			            Icon(
+                        Icon(
                             modifier = Modifier.size(20.dp),
                             imageVector = Icons.Outlined.Download,
                             contentDescription = null
-			            )
-			            if (!module.hasActionScript || !module.hasWebUi) {  
+                        )
+                        if (!module.hasActionScript || !module.hasWebUi) {
                             Text(
-				                modifier = Modifier.padding(start = 7.dp),
+                                modifier = Modifier.padding(start = 7.dp),
                                 fontFamily = MaterialTheme.typography.labelMedium.fontFamily,
                                 fontSize = MaterialTheme.typography.labelMedium.fontSize,
                                 text = stringResource(R.string.module_update)
                             )
-			            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.weight(0.1f, true))
                 }
 
-                FilledTonalButton(
-                    modifier = Modifier.defaultMinSize(52.dp, 32.dp),
-                    enabled = !module.remove,
-                    onClick = { onUninstall(module) },
-                    contentPadding = ButtonDefaults.TextButtonContentPadding
-                ) {
-		            Icon(
-    			        modifier = Modifier.size(20.dp),
-    		    	    imageVector = Icons.Outlined.Delete,
-    		    	    contentDescription = null
-		            )
-		            if (!module.hasActionScript && !module.hasWebUi && updateUrl.isEmpty()) {  
-                    	Text(
-			                modifier = Modifier.padding(start = 7.dp),
+                if (module.remove) {
+                    FilledTonalButton(
+                        modifier = Modifier.defaultMinSize(52.dp, 32.dp),
+                        onClick = { onRestore(module) },
+                        contentPadding = ButtonDefaults.TextButtonContentPadding
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(20.dp),
+                            imageVector = Icons.Outlined.Restore,
+                            contentDescription = null
+                        )
+                        Text(
+                            modifier = Modifier.padding(start = 7.dp),
+                            fontFamily = MaterialTheme.typography.labelMedium.fontFamily,
+                            fontSize = MaterialTheme.typography.labelMedium.fontSize,
+                            text = stringResource(R.string.restore)
+                        )
+                    }
+                } else {
+                    FilledTonalButton(
+                        modifier = Modifier.defaultMinSize(52.dp, 32.dp),
+                        enabled = true,
+                        onClick = { onUninstall(module) },
+                        contentPadding = ButtonDefaults.TextButtonContentPadding
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(20.dp),
+                            imageVector = Icons.Outlined.Delete,
+                            contentDescription = null
+                        )
+                        Text(
+                            modifier = Modifier.padding(start = 7.dp),
                             fontFamily = MaterialTheme.typography.labelMedium.fontFamily,
                             fontSize = MaterialTheme.typography.labelMedium.fontSize,
                             text = stringResource(R.string.uninstall)
                         )
-		            }
+                    }
                 }
             }
         }
@@ -696,5 +747,5 @@ fun ModuleItemPreview() {
         hasWebUi = false,
         hasActionScript = false
     )
-    ModuleItem(EmptyDestinationsNavigator, module, true, "", {}, {}, {}, {})
+    ModuleItem(EmptyDestinationsNavigator, module, true, "", {}, {}, {}, {}, {})
 }
